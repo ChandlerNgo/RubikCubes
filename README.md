@@ -22,4 +22,3 @@ GLFW installed system-wide.
 ```bash
 export GLEW_DIR=~/Desktop/glew-2.1.0
 export GLM_INCLUDE_DIR=~/Desktop/glm-0.9.9.7
-export GLFW_DIR=~/Desktop/glfw-3.3.8
