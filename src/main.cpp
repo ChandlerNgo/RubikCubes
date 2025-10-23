@@ -136,10 +136,11 @@ int main() {
 
     // Cube positions
     std::vector<glm::vec3> cubePositions = {
+        glm::vec3(-2.0f, 0.0f, 0.0f),
+        glm::vec3(-1.0f, 0.0f, 0.0f),
         glm::vec3(0.0f, 0.0f, 0.0f),
-        glm::vec3(2.0f, 0.0f, -5.0f),
-        glm::vec3(-1.5f, 1.0f, -3.0f),
-        glm::vec3(-2.0f, -1.0f, -4.0f)
+        glm::vec3(1.0f, 0.0f, 0.0f),
+        glm::vec3(2.0f, 0.0f, 0.0f),
     };
 
     // Render loop
@@ -150,8 +151,18 @@ int main() {
 
         glUseProgram(shaderProgram);
 
-        glm::mat4 view = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -5.0f));
-        glm::mat4 projection = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 100.0f);
+        glm::vec3 cameraPos = glm::vec3(5.0f, 3.0f, 5.0f);
+        glm::vec3 cameraTarget = glm::vec3(0.0f, 0.0f, 0.0f);
+        glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
+
+        glm::mat4 view = glm::lookAt(cameraPos, cameraTarget, up);
+
+        int width;
+        int height;
+        glfwGetFramebufferSize(window, &width, &height);
+        float aspect = (float)width / (float)height;
+
+        glm::mat4 projection = glm::perspective(glm::radians(45.0f), aspect, 0.1f, 100.0f);
         glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "view"), 1, GL_FALSE, glm::value_ptr(view));
         glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
 
