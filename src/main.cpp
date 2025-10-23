@@ -7,7 +7,6 @@
 #include <iostream>
 #include <vector>
 
-// Vertex shader
 const char* vertexShaderSource = R"glsl(
 #version 330 core
 layout(location = 0) in vec3 aPos;
@@ -25,7 +24,6 @@ void main() {
 }
 )glsl";
 
-// Fragment shader
 const char* fragmentShaderSource = R"glsl(
 #version 330 core
 in vec3 vertexColor;
@@ -36,18 +34,15 @@ void main() {
 }
 )glsl";
 
-// Window resize
 void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
     glViewport(0, 0, width, height);
 }
 
-// Input
 void processInput(GLFWwindow* window) {
     if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
 }
 
-// Cube vertex data (36 vertices, positions + colors)
 float cubeVertices[] = {
     // positions          // colors
     -0.5f, -0.5f,  0.5f,  1.0f, 0.0f, 0.0f,
@@ -99,7 +94,7 @@ int main() {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    GLFWwindow* window = glfwCreateWindow(800, 600, "Multiple Cubes", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(800, 600, "Rubik's Cube", NULL, NULL);
     if (!window) { glfwTerminate(); return -1; }
     glfwMakeContextCurrent(window);
 
