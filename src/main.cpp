@@ -6,33 +6,20 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <iostream>
 #include <vector>
+#include <string>
+#include <fstream>
+#include <sstream>
 
-const char* vertexShaderSource = R"glsl(
-#version 330 core
-layout(location = 0) in vec3 aPos;
-layout(location = 1) in vec3 aColor;
-
-out vec3 vertexColor;
-
-uniform mat4 model;
-uniform mat4 view;
-uniform mat4 projection;
-
-void main() {
-    gl_Position = projection * view * model * vec4(aPos, 1.0);
-    vertexColor = aColor;
+std::string loadShaderSource(const char* filePath) {
+    std::ifstream file(filePath);
+    if (!file.is_open()) {
+        std::cerr << "Failed to open shader file: " << filePath << std::endl;
+        return "";
+    }
+    std::stringstream buffer;
+    buffer << file.rdbuf();
+    return buffer.str();
 }
-)glsl";
-
-const char* fragmentShaderSource = R"glsl(
-#version 330 core
-in vec3 vertexColor;
-out vec4 FragColor;
-
-void main() {
-    FragColor = vec4(vertexColor, 1.0);
-}
-)glsl";
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
     glViewport(0, 0, width, height);
@@ -45,6 +32,8 @@ void processInput(GLFWwindow* window) {
 
 float cubeVertices[] = {
     // positions          // colors
+
+    // front face
     -0.5f, -0.5f,  0.5f,  1.0f, 0.0f, 0.0f,
      0.5f, -0.5f,  0.5f,  0.0f, 1.0f, 0.0f,
      0.5f,  0.5f,  0.5f,  0.0f, 0.0f, 1.0f,
@@ -52,6 +41,7 @@ float cubeVertices[] = {
     -0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 0.0f,
     -0.5f, -0.5f,  0.5f,  1.0f, 0.0f, 0.0f,
 
+    // back face
     -0.5f, -0.5f, -0.5f,  0.0f, 1.0f, 1.0f,
     -0.5f,  0.5f, -0.5f,  1.0f, 0.0f, 1.0f,
      0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 1.0f,
@@ -59,6 +49,7 @@ float cubeVertices[] = {
      0.5f, -0.5f, -0.5f,  0.5f, 0.5f, 0.5f,
     -0.5f, -0.5f, -0.5f,  0.0f, 1.0f, 1.0f,
 
+    // left face
     -0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 0.0f,
     -0.5f,  0.5f, -0.5f,  1.0f, 0.0f, 1.0f,
     -0.5f, -0.5f, -0.5f,  0.0f, 1.0f, 1.0f,
@@ -66,6 +57,7 @@ float cubeVertices[] = {
     -0.5f, -0.5f,  0.5f,  1.0f, 0.0f, 0.0f,
     -0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 0.0f,
 
+    // right face
      0.5f,  0.5f,  0.5f,  0.0f, 0.0f, 1.0f,
      0.5f, -0.5f, -0.5f,  0.5f, 0.5f, 0.5f,
      0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 1.0f,
@@ -73,6 +65,7 @@ float cubeVertices[] = {
      0.5f,  0.5f,  0.5f,  0.0f, 0.0f, 1.0f,
      0.5f, -0.5f,  0.5f,  0.0f, 1.0f, 0.0f,
 
+    // top face
     -0.5f,  0.5f, -0.5f,  1.0f, 0.0f, 1.0f,
     -0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 0.0f,
      0.5f,  0.5f,  0.5f,  0.0f, 0.0f, 1.0f,
@@ -80,6 +73,7 @@ float cubeVertices[] = {
      0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 1.0f,
     -0.5f,  0.5f, -0.5f,  1.0f, 0.0f, 1.0f,
 
+    // bottom face
     -0.5f, -0.5f, -0.5f,  0.0f, 1.0f, 1.0f,
      0.5f, -0.5f, -0.5f,  0.5f, 0.5f, 0.5f,
      0.5f, -0.5f,  0.5f,  0.0f, 1.0f, 0.0f,
@@ -117,6 +111,12 @@ int main() {
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
+
+    std::string vertexCode = loadShaderSource("resources/vertex_shader.vert");
+    std::string fragmentCode = loadShaderSource("resources/fragment_shader.frag");
+
+    const char* vertexShaderSource = vertexCode.c_str();
+    const char* fragmentShaderSource = fragmentCode.c_str();
 
     // Compile shaders
     unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
@@ -159,7 +159,7 @@ int main() {
 
         for (unsigned int i = 0; i < cubePositions.size(); i++) {
             glm::mat4 model = glm::translate(glm::mat4(1.0f), cubePositions[i]);
-            model = glm::rotate(model, (float)glfwGetTime() * (0.3f + 0.2f * i), glm::vec3(1.0f, 0.5f, 0.0f));
+            // model = glm::rotate(model, (float)glfwGetTime() * (0.3f + 0.2f * i), glm::vec3(1.0f, 0.5f, 0.0f));
             glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(model));
 
             glDrawArrays(GL_TRIANGLES, 0, 36);
