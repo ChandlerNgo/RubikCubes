@@ -11,7 +11,7 @@
 #include <sstream>
 #include "RubikCube.h"
 
-std::string loadShaderSource(const char* filePath) {
+std::string loadShaderSource(const char* filePath){
     std::ifstream file(filePath);
     if (!file.is_open()) {
         std::cerr << "Failed to open shader file: " << filePath << std::endl;
@@ -22,16 +22,54 @@ std::string loadShaderSource(const char* filePath) {
     return buffer.str();
 }
 
-void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
+void framebuffer_size_callback(GLFWwindow* window, int width, int height){
     glViewport(0, 0, width, height);
 }
 
 void processInput(GLFWwindow* window) {
-    if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+    if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS){
         glfwSetWindowShouldClose(window, true);
+    }
 }
 
-int main() {
+RubikCube rubikCube(3);
+
+void CharacterCallback(GLFWwindow* window, unsigned int key){
+    // Placeholder for character input handling
+
+    std::cout << "Key pressed: " << static_cast<char>(key) << std::endl;
+
+    switch(key) {
+        case 'U':
+            rubikCube.rotateLayer(2, 'y', -45.0f);
+            break;
+        case 'u':
+            rubikCube.rotateLayer(2, 'y', 45.0f);
+            break;
+        case 'D':
+            rubikCube.rotateLayer(0, 'y', 45.0f);
+            break;
+        case 'd':
+            rubikCube.rotateLayer(0, 'y', -45.0f);
+            break;
+        case 'L':
+            rubikCube.rotateLayer(0, 'x', -45.0f);
+            break;
+        case 'R':
+            rubikCube.rotateLayer(2, 'x', 45.0f);
+            break;
+        case 'F':
+            rubikCube.rotateLayer(2, 'z', 45.0f);
+            break;
+        case 'B':
+            rubikCube.rotateLayer(0, 'z', -45.0f);
+            break;
+        default:
+            break;
+    }
+}
+
+int main(){
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
@@ -40,6 +78,7 @@ int main() {
     GLFWwindow* window = glfwCreateWindow(800, 600, "Rubik's Cube", NULL, NULL);
     if (!window) { glfwTerminate(); return -1; }
     glfwMakeContextCurrent(window);
+    glfwSetCharCallback(window, CharacterCallback);
 
     glewExperimental = GL_TRUE;
     if (glewInit() != GLEW_OK) { std::cout << "Failed to initialize GLEW\n"; return -1; }
@@ -47,8 +86,6 @@ int main() {
     glViewport(0, 0, 800, 600);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
     glEnable(GL_DEPTH_TEST);
-    
-    RubikCube rubikCube(3);
 
     std::vector<float> positions;
     std::vector<float> colors;
@@ -100,7 +137,7 @@ int main() {
     glDeleteShader(fragmentShader);
 
     // Render loop
-    while (!glfwWindowShouldClose(window)) {
+    while(!glfwWindowShouldClose(window)){
         processInput(window);
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -116,8 +153,8 @@ int main() {
 
         glUseProgram(shaderProgram);
 
-        glm::vec3 cameraPos = glm::vec3(1.0f, 1.0f, 10.0f);
-        glm::vec3 cameraTarget = glm::vec3(1.0f, 1.0f, 1.0f);
+        glm::vec3 cameraPos = glm::vec3(2.0f, 2.0f, 10.0f);
+        glm::vec3 cameraTarget = glm::vec3(0.0f, 0.0f, 0.0f);
         glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
 
         glm::mat4 view = glm::lookAt(cameraPos, cameraTarget, up);
@@ -133,13 +170,13 @@ int main() {
 
         glBindVertexArray(VAO);
 
-        glm::mat4 model = glm::mat4(1.0f);
-        glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(model));
+        for(int i = 0; i < (int)rubikCube.cubes.size(); i++){
+            glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(rubikCube.cubes[i].modelMatrix));
+            glDrawArrays(GL_TRIANGLES, i*36, 36);
+        }
 
         // model = glm::rotate(model, (float)glfwGetTime() * (0.3f + 0.2f * i), glm::vec3(1.0f, 0.5f, 0.0f));
 
-        glBindVertexArray(VAO);
-        glDrawArrays(GL_TRIANGLES, 0, positions.size() / 3);
         glBindVertexArray(0);
 
         glfwSwapBuffers(window);
