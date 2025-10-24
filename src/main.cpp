@@ -9,6 +9,7 @@
 #include <string>
 #include <fstream>
 #include <sstream>
+#include "RubikCube.h"
 
 std::string loadShaderSource(const char* filePath) {
     std::ifstream file(filePath);
@@ -30,58 +31,6 @@ void processInput(GLFWwindow* window) {
         glfwSetWindowShouldClose(window, true);
 }
 
-float cubeVertices[] = {
-    // positions          // colors
-
-    // front face
-    -0.5f, -0.5f,  0.5f,  1.0f, 0.0f, 0.0f,
-     0.5f, -0.5f,  0.5f,  0.0f, 1.0f, 0.0f,
-     0.5f,  0.5f,  0.5f,  0.0f, 0.0f, 1.0f,
-     0.5f,  0.5f,  0.5f,  0.0f, 0.0f, 1.0f,
-    -0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 0.0f,
-    -0.5f, -0.5f,  0.5f,  1.0f, 0.0f, 0.0f,
-
-    // back face
-    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f, 1.0f,
-    -0.5f,  0.5f, -0.5f,  1.0f, 0.0f, 1.0f,
-     0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 1.0f,
-     0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 1.0f,
-     0.5f, -0.5f, -0.5f,  0.5f, 0.5f, 0.5f,
-    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f, 1.0f,
-
-    // left face
-    -0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 0.0f,
-    -0.5f,  0.5f, -0.5f,  1.0f, 0.0f, 1.0f,
-    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f, 1.0f,
-    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f, 1.0f,
-    -0.5f, -0.5f,  0.5f,  1.0f, 0.0f, 0.0f,
-    -0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 0.0f,
-
-    // right face
-     0.5f,  0.5f,  0.5f,  0.0f, 0.0f, 1.0f,
-     0.5f, -0.5f, -0.5f,  0.5f, 0.5f, 0.5f,
-     0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 1.0f,
-     0.5f, -0.5f, -0.5f,  0.5f, 0.5f, 0.5f,
-     0.5f,  0.5f,  0.5f,  0.0f, 0.0f, 1.0f,
-     0.5f, -0.5f,  0.5f,  0.0f, 1.0f, 0.0f,
-
-    // top face
-    -0.5f,  0.5f, -0.5f,  1.0f, 0.0f, 1.0f,
-    -0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 0.0f,
-     0.5f,  0.5f,  0.5f,  0.0f, 0.0f, 1.0f,
-     0.5f,  0.5f,  0.5f,  0.0f, 0.0f, 1.0f,
-     0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 1.0f,
-    -0.5f,  0.5f, -0.5f,  1.0f, 0.0f, 1.0f,
-
-    // bottom face
-    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f, 1.0f,
-     0.5f, -0.5f, -0.5f,  0.5f, 0.5f, 0.5f,
-     0.5f, -0.5f,  0.5f,  0.0f, 1.0f, 0.0f,
-     0.5f, -0.5f,  0.5f,  0.0f, 1.0f, 0.0f,
-    -0.5f, -0.5f,  0.5f,  1.0f, 0.0f, 0.0f,
-    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f, 1.0f
-};
-
 int main() {
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -98,19 +47,35 @@ int main() {
     glViewport(0, 0, 800, 600);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
     glEnable(GL_DEPTH_TEST);
+    
+    RubikCube rubikCube(3);
 
-    // VAO & VBO
-    unsigned int VAO, VBO;
+    std::vector<float> positions;
+    std::vector<float> colors;
+    rubikCube.generateVertexData(positions, colors);
+
+    // VAO & VBOs
+    unsigned int VAO, VBO_positions, VBO_colors;
     glGenVertexArrays(1, &VAO);
-    glGenBuffers(1, &VBO);
-    glBindVertexArray(VAO);
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(cubeVertices), cubeVertices, GL_STATIC_DRAW);
+    glGenBuffers(1, &VBO_positions);
+    glGenBuffers(1, &VBO_colors);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+    glBindVertexArray(VAO);
+
+    // Positions VBO
+    glBindBuffer(GL_ARRAY_BUFFER, VBO_positions);
+    glBufferData(GL_ARRAY_BUFFER, positions.size() * sizeof(float), positions.data(), GL_DYNAMIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+
+    // Colors VBO
+    glBindBuffer(GL_ARRAY_BUFFER, VBO_colors);
+    glBufferData(GL_ARRAY_BUFFER, colors.size() * sizeof(float), colors.data(), GL_DYNAMIC_DRAW);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
     glEnableVertexAttribArray(1);
+
+    // Unbind VAO
+    glBindVertexArray(0);
 
     std::string vertexCode = loadShaderSource("resources/vertex_shader.vert");
     std::string fragmentCode = loadShaderSource("resources/fragment_shader.frag");
@@ -134,25 +99,25 @@ int main() {
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
 
-    // Cube positions
-    std::vector<glm::vec3> cubePositions = {
-        glm::vec3(-2.0f, 0.0f, 0.0f),
-        glm::vec3(-1.0f, 0.0f, 0.0f),
-        glm::vec3(0.0f, 0.0f, 0.0f),
-        glm::vec3(1.0f, 0.0f, 0.0f),
-        glm::vec3(2.0f, 0.0f, 0.0f),
-    };
-
     // Render loop
     while (!glfwWindowShouldClose(window)) {
         processInput(window);
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+        positions.clear();
+        colors.clear();
+        rubikCube.generateVertexData(positions, colors);
+
+        glBindBuffer(GL_ARRAY_BUFFER, VBO_positions);
+        glBufferSubData(GL_ARRAY_BUFFER, 0, positions.size()*sizeof(float), positions.data());
+        glBindBuffer(GL_ARRAY_BUFFER, VBO_colors);
+        glBufferSubData(GL_ARRAY_BUFFER, 0, colors.size()*sizeof(float), colors.data());
+
         glUseProgram(shaderProgram);
 
-        glm::vec3 cameraPos = glm::vec3(5.0f, 3.0f, 5.0f);
-        glm::vec3 cameraTarget = glm::vec3(0.0f, 0.0f, 0.0f);
+        glm::vec3 cameraPos = glm::vec3(1.0f, 1.0f, 10.0f);
+        glm::vec3 cameraTarget = glm::vec3(1.0f, 1.0f, 1.0f);
         glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
 
         glm::mat4 view = glm::lookAt(cameraPos, cameraTarget, up);
@@ -168,20 +133,22 @@ int main() {
 
         glBindVertexArray(VAO);
 
-        for (unsigned int i = 0; i < cubePositions.size(); i++) {
-            glm::mat4 model = glm::translate(glm::mat4(1.0f), cubePositions[i]);
-            // model = glm::rotate(model, (float)glfwGetTime() * (0.3f + 0.2f * i), glm::vec3(1.0f, 0.5f, 0.0f));
-            glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(model));
+        glm::mat4 model = glm::mat4(1.0f);
+        glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(model));
 
-            glDrawArrays(GL_TRIANGLES, 0, 36);
-        }
+        // model = glm::rotate(model, (float)glfwGetTime() * (0.3f + 0.2f * i), glm::vec3(1.0f, 0.5f, 0.0f));
+
+        glBindVertexArray(VAO);
+        glDrawArrays(GL_TRIANGLES, 0, positions.size() / 3);
+        glBindVertexArray(0);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
 
     glDeleteVertexArrays(1, &VAO);
-    glDeleteBuffers(1, &VBO);
+    glDeleteBuffers(1, &VBO_positions);
+    glDeleteBuffers(1, &VBO_colors);
     glDeleteProgram(shaderProgram);
     glfwTerminate();
     return 0;
